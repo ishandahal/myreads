@@ -1,7 +1,7 @@
 import sqlite3
 from pathlib import Path
 
-from bookshelf.db import add_book, init_db, list_books
+from bookshelf.db import add_book, init_db, list_books, update_book
 from bookshelf.models import Book
 
 
@@ -88,3 +88,39 @@ def test_list_books_sorts_by_column(tmp_path: Path):
 
     assert books[0].title == "Dune"
     assert books[1].title == "Neuromancer"
+
+
+def test_update_book_single_field(tmp_path: Path):
+    db_path = tmp_path / "test.db"
+    init_db(db_path)
+
+    book = Book(title="Dune", author="Frank Herbert", genre="sci-fi")
+    book_id = add_book(db_path, book)
+
+    update_book(db_path, book_id, {"author": "Jack Boyle"})
+
+    conn = sqlite3.connect(db_path)
+    row = conn.execute(
+        "SELECT title, author, genre FROM books WHERE id=?", (book_id,)
+    ).fetchone()
+    conn.close()
+
+    assert row == ("Dune", "Jack Boyle", "sci-fi")
+
+
+def test_update_book_multiple_fields(tmp_path: Path):
+    db_path = tmp_path / "test.db"
+    init_db(db_path)
+
+    book = Book(title="Dune", author="Frank Herbert", status="want-to-read", genre="sci-fi")
+    book_id = add_book(db_path, book)
+
+    update_book(db_path, book_id, {"status": "read", "genre": "classic sci-fi", "notes": "Loved it"})
+
+    conn = sqlite3.connect(db_path)
+    row = conn.execute(
+        "SELECT status, genre, notes FROM books WHERE id=?", (book_id,)
+    ).fetchone()
+    conn.close()
+
+    assert row == ("read", "classic sci-fi", "Loved it")

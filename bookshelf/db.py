@@ -1,8 +1,13 @@
 import sqlite3
+from datetime import datetime
 from pathlib import Path
 
 from bookshelf.models import Book
 
+# Module-level column whitelists: these are security boundaries that guard
+# against SQL injection in dynamically built queries (ORDER BY / SET clauses).
+SORTABLE_COLUMNS = {"title", "author", "status", "genre", "added_at", "updated_at"}
+UPDATABLE_COLUMNS = {"title", "author", "status", "genre", "notes", "source"}
 
 def init_db(db_path: Path) -> None:
     """Create the bookshelf database and books table if they don't exist.
@@ -52,7 +57,6 @@ def add_book(db_path: Path, book: Book) -> int:
     conn.close()
     return book_id
 
-SORTABLE_COLUMNS = {"title", "author", "status", "genre", "added_at", "updated_at"}
 
 
 def list_books(
@@ -106,3 +110,34 @@ def list_books(
         )
         for row in rows
     ]
+
+
+def update_book(db_path: Path, book_id: int, book: dict) -> None:
+    """Update book in the database with provided columns and values.
+
+    Args:
+        db_path: Path to the SQLite database file.
+        book_id: Id of the book to be updated.
+        book: Dict of field names to new values.
+
+    Returns:
+        None
+
+    Raises:
+        ValueError: If column is not updatable.
+    """
+    for col in book:
+        if col not in UPDATABLE_COLUMNS:
+            raise ValueError(f"Invalid update column: {col}")
+
+    updated_book = {**book, "updated_at": datetime.now().isoformat()}
+    set_clauses = [f"{key} = :{key}" for key in updated_book]
+    set_clause = ", ".join(set_clauses)
+
+    sql_statement = f"UPDATE books SET {set_clause} WHERE id=:id"
+
+    conn = sqlite3.connect(db_path)
+    params = {**updated_book, "id": book_id}
+    conn.execute(sql_statement, params)
+    conn.commit()
+    conn.close()
