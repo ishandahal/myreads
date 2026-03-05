@@ -8,6 +8,9 @@ from bookshelf.models import Book
 # against SQL injection in dynamically built queries (ORDER BY / SET clauses).
 SORTABLE_COLUMNS = {"title", "author", "status", "genre", "added_at", "updated_at"}
 UPDATABLE_COLUMNS = {"title", "author", "status", "genre", "notes", "source"}
+SEARCHABLE_COLUMNS = {"title", "author", "genre", "notes", "source"}
+
+BOOK_COLUMNS = "id, title, author, status, genre, notes, source, added_at, updated_at"
 
 def init_db(db_path: Path) -> None:
     """Create the bookshelf database and books table if they don't exist.
@@ -82,7 +85,7 @@ def list_books(
     if sort_by not in SORTABLE_COLUMNS:
         raise ValueError(f"Invalid sort column: {sort_by}")
 
-    query = "SELECT id, title, author, status, genre, notes, source, added_at, updated_at FROM books"
+    query = f"SELECT {BOOK_COLUMNS} FROM books"
     conditions = []
     params = []
 
@@ -141,3 +144,51 @@ def update_book(db_path: Path, book_id: int, book: dict) -> None:
     conn.execute(sql_statement, params)
     conn.commit()
     conn.close()
+
+
+def search_books(
+    db_path: Path,
+    term: str,
+    field: str | None = None,
+) -> list[Book]:
+    """Search books by term across one or all searchable fields.
+
+    Args:
+        db_path: Path to the SQLite database file.
+        term: Search term (substring match).
+        field: Limit search to this column. If None, searches all.
+
+    Returns:
+        List of matching Book instances.
+
+    Raises:
+        ValueError: If field is not a valid searchable column.
+    """
+    if field is not None and field not in SEARCHABLE_COLUMNS:
+        raise ValueError(f"Invalid search column: {field}")
+
+    like_param = f"%{term}%"
+
+    if field is not None:
+        where_clause = f"WHERE {field} LIKE ?"
+        params = (like_param,)
+    else:
+        where_clause = "WHERE " + " OR ".join(
+            f"{col} LIKE ?" for col in SEARCHABLE_COLUMNS
+        )
+        params = tuple(like_param for _ in SEARCHABLE_COLUMNS)
+
+    query = f"SELECT {BOOK_COLUMNS} FROM books {where_clause} ORDER BY added_at"
+
+    conn = sqlite3.connect(db_path)
+    rows = conn.execute(query, params).fetchall()
+    conn.close()
+
+    return [
+        Book(
+            id=row[0], title=row[1], author=row[2], status=row[3],
+            genre=row[4], notes=row[5], source=row[6],
+            added_at=row[7], updated_at=row[8],
+        )
+        for row in rows
+    ]

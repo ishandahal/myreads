@@ -1,7 +1,7 @@
 import sqlite3
 from pathlib import Path
 
-from bookshelf.db import add_book, init_db, list_books, update_book
+from bookshelf.db import add_book, init_db, list_books, search_books, update_book
 from bookshelf.models import Book
 
 
@@ -124,3 +124,36 @@ def test_update_book_multiple_fields(tmp_path: Path):
     conn.close()
 
     assert row == ("read", "classic sci-fi", "Loved it")
+
+
+def test_search_books(tmp_path: Path):
+    db_path = tmp_path / "test.db"
+    init_db(db_path)
+    add_book(db_path, Book(title="Dune", author="Frank Herbert", genre="sci-fi"))
+    add_book(db_path, Book(title="1984", author="George Orwell", genre="dystopian", notes="some with Dune"))
+    add_book(db_path, Book(title="test", author="test test", genre="sci-fi"))
+
+    books = search_books(db_path, term="Dune")
+    titles = {b.title for b in books}
+    authors = {b.author for b in books}
+
+    assert len(books) == 2
+    assert titles == {"Dune", "1984"}
+    assert authors == {"Frank Herbert", "George Orwell"}
+
+    # Negative case: no matches
+    books = search_books(db_path, term="nonexistent")
+    assert len(books) == 0
+
+
+def test_search_books_with_field(tmp_path: Path):
+    db_path = tmp_path / "test.db"
+    init_db(db_path)
+    add_book(db_path, Book(title="Dune", author="Frank Herbert", genre="sci-fi"))
+    add_book(db_path, Book(title="1984", author="George Orwell", genre="dystopian", notes="some with Dune"))
+    add_book(db_path, Book(title="test", author="test test", genre="sci-fi"))
+
+    books = search_books(db_path, term="1984", field="title")
+
+    assert len(books) == 1
+    assert books[0].genre == "dystopian"
