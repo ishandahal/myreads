@@ -1,6 +1,7 @@
 import sqlite3
 from datetime import datetime
 from pathlib import Path
+from typing import cast
 
 from bookshelf.models import Book, BookNotFoundError, InvalidColumnError
 
@@ -11,6 +12,7 @@ UPDATABLE_COLUMNS = {"title", "author", "status", "genre", "notes", "source"}
 SEARCHABLE_COLUMNS = {"title", "author", "genre", "notes", "source"}
 
 BOOK_COLUMNS = "id, title, author, status, genre, notes, source, added_at, updated_at"
+
 
 def init_db(db_path: Path) -> None:
     """Create the bookshelf database and books table if they don't exist.
@@ -52,14 +54,22 @@ def add_book(db_path: Path, book: Book) -> int:
         INSERT INTO books (title, author, status, genre, notes, source, added_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """,
-        (book.title, book.author, book.status, book.genre,
-         book.notes, book.source, book.added_at, book.updated_at),
+        (
+            book.title,
+            book.author,
+            book.status,
+            book.genre,
+            book.notes,
+            book.source,
+            book.added_at,
+            book.updated_at,
+        ),
     )
     conn.commit()
-    book_id = cursor.lastrowid
+    # lastrowid is always set after INSERT but typed as int | None in stubs
+    book_id = cast(int, cursor.lastrowid)
     conn.close()
     return book_id
-
 
 
 def list_books(
@@ -107,9 +117,15 @@ def list_books(
 
     return [
         Book(
-            id=row[0], title=row[1], author=row[2], status=row[3],
-            genre=row[4], notes=row[5], source=row[6],
-            added_at=row[7], updated_at=row[8],
+            id=row[0],
+            title=row[1],
+            author=row[2],
+            status=row[3],
+            genre=row[4],
+            notes=row[5],
+            source=row[6],
+            added_at=row[7],
+            updated_at=row[8],
         )
         for row in rows
     ]
@@ -172,6 +188,7 @@ def search_books(
         raise InvalidColumnError(f"Invalid search column: {field}")
 
     like_param = f"%{term}%"
+    params: tuple[str, ...]
 
     if field is not None:
         where_clause = f"WHERE {field} LIKE ?"
@@ -190,9 +207,15 @@ def search_books(
 
     return [
         Book(
-            id=row[0], title=row[1], author=row[2], status=row[3],
-            genre=row[4], notes=row[5], source=row[6],
-            added_at=row[7], updated_at=row[8],
+            id=row[0],
+            title=row[1],
+            author=row[2],
+            status=row[3],
+            genre=row[4],
+            notes=row[5],
+            source=row[6],
+            added_at=row[7],
+            updated_at=row[8],
         )
         for row in rows
     ]

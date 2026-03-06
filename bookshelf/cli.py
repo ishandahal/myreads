@@ -32,9 +32,24 @@ def cli(ctx: click.Context, db: str) -> None:
 @click.option("--notes", default="", help="Short notes.")
 @click.option("--source", default="", help="Where you heard about it.")
 @click.pass_context
-def add(ctx: click.Context, title: str, author: str, status: str, genre: str, notes: str, source: str) -> None:
+def add(
+    ctx: click.Context,
+    title: str,
+    author: str,
+    status: str,
+    genre: str,
+    notes: str,
+    source: str,
+) -> None:
     """Add a book to your shelf."""
-    book = Book(title=title, author=author, status=status, genre=genre, notes=notes, source=source)
+    book = Book(
+        title=title,
+        author=author,
+        status=status,
+        genre=genre,
+        notes=notes,
+        source=source,
+    )
     book_id = add_book(ctx.obj["db_path"], book)
     click.echo(f"Added '{title}' by {author} (id: {book_id})")
 
@@ -44,14 +59,18 @@ def add(ctx: click.Context, title: str, author: str, status: str, genre: str, no
 @click.option("--genre", default=None, help="Filter by genre.")
 @click.option("--sort-by", default="added_at", help="Column to sort by.")
 @click.pass_context
-def list_cmd(ctx: click.Context, status: str | None, genre: str | None, sort_by: str) -> None:
+def list_cmd(
+    ctx: click.Context, status: str | None, genre: str | None, sort_by: str
+) -> None:
     """List books on your shelf."""
     books = list_books(ctx.obj["db_path"], status=status, genre=genre, sort_by=sort_by)
     if not books:
         click.echo("No books found.")
         return
     for book in books:
-        click.echo(f"[{book.id}] {book.title} by {book.author} ({book.status}) genre:{book.genre}")
+        click.echo(
+            f"[{book.id}] {book.title} by {book.author} ({book.status}) genre:{book.genre}"
+        )
 
 
 @cli.command()
@@ -82,6 +101,8 @@ def update(ctx: click.Context, book_id: int, **kwargs: str | None) -> None:
     else:
         summary = ", ".join(f"{k}='{v}'" for k, v in changes.items())
         click.echo(f"Updated book #{book_id}: {summary}")
+
+
 @cli.command()
 @click.argument("term")
 @click.option("--field", default=None, help="Limit search to a specific field.")
@@ -98,4 +119,6 @@ def search(ctx: click.Context, term: str, field: str | None) -> None:
             click.echo(f"No books matching '{term}'.")
             return
         for book in books:
-            click.echo(f"[{book.id}] {book.title} by {book.author} ({book.status}) genre:{book.genre}")
+            click.echo(
+                f"[{book.id}] {book.title} by {book.author} ({book.status}) genre:{book.genre}"
+            )

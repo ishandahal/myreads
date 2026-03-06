@@ -113,10 +113,16 @@ def test_update_book_multiple_fields(tmp_path: Path):
     db_path = tmp_path / "test.db"
     init_db(db_path)
 
-    book = Book(title="Dune", author="Frank Herbert", status="want-to-read", genre="sci-fi")
+    book = Book(
+        title="Dune", author="Frank Herbert", status="want-to-read", genre="sci-fi"
+    )
     book_id = add_book(db_path, book)
 
-    update_book(db_path, book_id, {"status": "read", "genre": "classic sci-fi", "notes": "Loved it"})
+    update_book(
+        db_path,
+        book_id,
+        {"status": "read", "genre": "classic sci-fi", "notes": "Loved it"},
+    )
 
     conn = sqlite3.connect(db_path)
     row = conn.execute(
@@ -148,11 +154,20 @@ def test_update_book_invalid_book_id(tmp_path: Path):
     with pytest.raises(BookNotFoundError):
         update_book(db_path, 999, {"author": "Jack Boyle"})
 
+
 def test_search_books(tmp_path: Path):
     db_path = tmp_path / "test.db"
     init_db(db_path)
     add_book(db_path, Book(title="Dune", author="Frank Herbert", genre="sci-fi"))
-    add_book(db_path, Book(title="1984", author="George Orwell", genre="dystopian", notes="some with Dune"))
+    add_book(
+        db_path,
+        Book(
+            title="1984",
+            author="George Orwell",
+            genre="dystopian",
+            notes="some with Dune",
+        ),
+    )
     add_book(db_path, Book(title="test", author="test test", genre="sci-fi"))
 
     books = search_books(db_path, term="Dune")
@@ -172,7 +187,15 @@ def test_search_books_with_field(tmp_path: Path):
     db_path = tmp_path / "test.db"
     init_db(db_path)
     add_book(db_path, Book(title="Dune", author="Frank Herbert", genre="sci-fi"))
-    add_book(db_path, Book(title="1984", author="George Orwell", genre="dystopian", notes="some with Dune"))
+    add_book(
+        db_path,
+        Book(
+            title="1984",
+            author="George Orwell",
+            genre="dystopian",
+            notes="some with Dune",
+        ),
+    )
     add_book(db_path, Book(title="test", author="test test", genre="sci-fi"))
 
     books = search_books(db_path, term="1984", field="title")
