@@ -3,7 +3,7 @@ from pathlib import Path
 import click
 
 from bookshelf.db import add_book, init_db, list_books, search_books, update_book
-from bookshelf.models import VALID_STATUSES, Book
+from bookshelf.models import VALID_STATUSES, Book, BookNotFoundError, InvalidColumnError
 
 DEFAULT_DB = Path.home() / ".bookshelf.db"
 
@@ -74,9 +74,14 @@ def update(ctx: click.Context, book_id: int, **kwargs: str | None) -> None:
     if not changes:
         click.echo("Nothing to update — provide at least one option.")
         return
-    update_book(ctx.obj["db_path"], book_id, changes)
-    summary = ", ".join(f"{k}='{v}'" for k, v in changes.items())
-    click.echo(f"Updated book #{book_id}: {summary}")
+    try:
+        update_book(ctx.obj["db_path"], book_id, changes)
+    except (BookNotFoundError, InvalidColumnError) as e:
+        click.echo(str(e))
+        ctx.exit(1)
+    else:
+        summary = ", ".join(f"{k}='{v}'" for k, v in changes.items())
+        click.echo(f"Updated book #{book_id}: {summary}")
 @cli.command()
 @click.argument("term")
 @click.option("--field", default=None, help="Limit search to a specific field.")

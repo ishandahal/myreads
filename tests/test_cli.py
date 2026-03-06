@@ -115,3 +115,18 @@ def test_search_command_no_results(tmp_path: Path):
 
     assert result.exit_code == 0
     assert "No books matching" in result.output
+def test_update_command_invalid_book_id(tmp_path: Path):
+    db_path = str(tmp_path / "test.db")
+    runner = CliRunner()
+    runner.invoke(cli, [
+        "--db", db_path, "add",
+        "--title", "Dune", "--author", "Frank Herbert",
+    ])
+
+    result = runner.invoke(cli, [
+        "--db", db_path, "update", "999", "--status", "read",
+    ])
+
+    assert result.exit_code == 1
+    assert "No book with id 999" in result.output
+
