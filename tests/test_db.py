@@ -179,3 +179,19 @@ def test_search_books_with_field(tmp_path: Path):
 
     assert len(books) == 1
     assert books[0].genre == "dystopian"
+
+
+def test_list_books_invalid_sort_column(tmp_path: Path):
+    db_path = tmp_path / "test.db"
+    init_db(db_path)
+
+    with pytest.raises(InvalidColumnError):
+        list_books(db_path, sort_by="invalid_column")
+
+
+def test_search_books_invalid_field(tmp_path: Path):
+    db_path = tmp_path / "test.db"
+    init_db(db_path)
+
+    with pytest.raises(InvalidColumnError):
+        search_books(db_path, term="Dune", field="banana")

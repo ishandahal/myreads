@@ -80,10 +80,10 @@ def list_books(
         List of matching Book instances.
 
     Raises:
-        ValueError: If sort_by is not a valid column name.
+        InvalidColumnError: If sort_by is not a valid column name.
     """
     if sort_by not in SORTABLE_COLUMNS:
-        raise ValueError(f"Invalid sort column: {sort_by}")
+        raise InvalidColumnError(f"Invalid sort column: {sort_by}")
 
     query = f"SELECT {BOOK_COLUMNS} FROM books"
     conditions = []
@@ -127,7 +127,8 @@ def update_book(db_path: Path, book_id: int, book: dict) -> None:
         None
 
     Raises:
-        ValueError: If column is not updatable.
+        InvalidColumnError: If column is not updatable.
+        BookNotFoundError: If book_id is not found in the db.
     """
     for col in book:
         if col not in UPDATABLE_COLUMNS:
@@ -165,10 +166,10 @@ def search_books(
         List of matching Book instances.
 
     Raises:
-        ValueError: If field is not a valid searchable column.
+        InvalidColumnError: If field is not a valid searchable column.
     """
     if field is not None and field not in SEARCHABLE_COLUMNS:
-        raise ValueError(f"Invalid search column: {field}")
+        raise InvalidColumnError(f"Invalid search column: {field}")
 
     like_param = f"%{term}%"
 
