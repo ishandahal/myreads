@@ -164,6 +164,25 @@ def update_book(db_path: Path, book_id: int, book: dict) -> None:
         raise BookNotFoundError(f"No book with id {book_id}")
     conn.commit()
     conn.close()
+def delete_book(db_path: Path, book_id: int) -> None:
+    """Delete a book from the database by ID.
+
+    Args:
+        db_path: Path to the SQLite database file.
+        book_id: ID of the book to delete.
+
+    Raises:
+        BookNotFoundError: If no book with the given ID exists.
+    """
+    conn = sqlite3.connect(db_path)
+    cursor = conn.execute("DELETE FROM books WHERE id=:id", {"id": book_id})
+
+    if cursor.rowcount == 0:
+        conn.close()
+        raise BookNotFoundError(f"No book with id {book_id}")
+
+    conn.commit()
+    conn.close()
 
 
 def delete_book(db_path: Path, book_id: int) -> None:
