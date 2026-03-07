@@ -2,7 +2,14 @@ import pytest
 import sqlite3
 from pathlib import Path
 
-from bookshelf.db import add_book, init_db, list_books, search_books, update_book
+from bookshelf.db import (
+    add_book,
+    delete_book,
+    init_db,
+    list_books,
+    search_books,
+    update_book,
+)
 from bookshelf.models import Book, BookNotFoundError, InvalidColumnError
 
 
@@ -218,3 +225,32 @@ def test_search_books_invalid_field(tmp_path: Path):
 
     with pytest.raises(InvalidColumnError):
         search_books(db_path, term="Dune", field="banana")
+
+
+def test_delete_book(tmp_path: Path):
+    db_path = tmp_path / "test.db"
+    init_db(db_path)
+
+    book = Book(title="Dune", author="Frank Herbert", genre="sci-fi")
+    book_id = add_book(db_path, book)
+
+    delete_book(db_path, book_id)
+
+    conn = sqlite3.connect(db_path)
+    row = conn.execute(
+        "SELECT title, author, genre FROM books WHERE id=?", (book_id,)
+    ).fetchone()
+    conn.close()
+
+    assert row is None
+
+
+def test_delete_book_invalid_book_id(tmp_path: Path):
+    db_path = tmp_path / "test.db"
+    init_db(db_path)
+
+    book = Book(title="Dune", author="Frank Herbert", genre="sci-fi")
+    add_book(db_path, book)
+
+    with pytest.raises(BookNotFoundError):
+        delete_book(db_path, 999)
