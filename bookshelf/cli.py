@@ -2,7 +2,14 @@ from pathlib import Path
 
 import click
 
-from bookshelf.db import add_book, init_db, list_books, search_books, update_book
+from bookshelf.db import (
+    add_book,
+    delete_book,
+    init_db,
+    list_books,
+    search_books,
+    update_book,
+)
 from bookshelf.models import VALID_STATUSES, Book, BookNotFoundError, InvalidColumnError
 
 DEFAULT_DB = Path.home() / ".bookshelf.db"
@@ -122,3 +129,17 @@ def search(ctx: click.Context, term: str, field: str | None) -> None:
             click.echo(
                 f"[{book.id}] {book.title} by {book.author} ({book.status}) genre:{book.genre}"
             )
+
+
+@cli.command()
+@click.argument("book_id", type=int)
+@click.pass_context
+def delete(ctx: click.Context, book_id: int) -> None:
+    """Delete a book from your shelf by ID."""
+    try:
+        delete_book(ctx.obj["db_path"], book_id)
+    except BookNotFoundError as e:
+        click.echo(str(e))
+        ctx.exit(1)
+    else:
+        click.echo(f"Removed book #{book_id}")
